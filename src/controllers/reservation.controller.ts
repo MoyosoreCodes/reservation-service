@@ -34,11 +34,11 @@ export class ReservationController {
   async update(dto: UpdateReservationDTO) {
     const { id, tableId, ...updates } = dto;
 
+    const existingReservation = await this.reservationService.findById(id);
+
     let table;
-    if (tableId) {
-      const existingReservation = await this.reservationService.findById(id);
-      if (existingReservation.table.id !== tableId)
-        table = await this.tableService.findById(tableId);
+    if (tableId && existingReservation.table.id !== tableId) {
+      table = await this.tableService.findById(tableId);
     }
 
     return await this.reservationService.update(id, updates, table);
