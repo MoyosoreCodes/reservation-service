@@ -1,12 +1,12 @@
 import { config } from "dotenv";
+config({ path: ".env" });
 
-
-import "reflect-metadata";
-config();
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
+
+import "reflect-metadata";
 
 import logger from "./src/common/logger";
 import { initDatabase } from "./src/config/database.config";

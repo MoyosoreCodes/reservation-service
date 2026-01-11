@@ -4,3 +4,6 @@ export enum Environments {
   STAGING = "staging",
   PRODUCTION = "production",
 }
+
+export * from "./reservation.enum";
+export * from "./restaurant.enum";

@@ -142,7 +142,6 @@ export const getAllRestaurantSchema = z.object().extend(paginationSchema.shape);
 
 export const addTableToRestaurantSchema = z.object({
   restaurantId: z.uuid(),
-  tableNumber: z.number(),
   capacity: z.number(),
 });
 

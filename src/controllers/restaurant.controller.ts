@@ -32,13 +32,12 @@ export class RestaurantController {
   }
 
   async addTable(dto: AddTableToRestaurantDto) {
-    const { restaurantId, capacity, tableNumber } = dto;
+    const { restaurantId, capacity } = dto;
     const restaurant = await this.restaurantService.findById(restaurantId);
 
     return await this.tableService.create(
       {
         capacity,
-        tableNumber,
       },
       restaurant,
     );

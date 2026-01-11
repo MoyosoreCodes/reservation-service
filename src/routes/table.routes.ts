@@ -5,10 +5,17 @@ import {
   createTableSchema,
   GetAvailableSlotsDTO,
   getAvailableSlotsSchema,
+  GetTablesByRestaurantIdParams,
+  getTablesByRestaurantIdParamsSchema,
   IsTableAvailableDTO,
   isTableAvailableParamsSchema,
   isTableAvailableQuerySchema,
 } from "../common/dto/table.dto";
+import {
+  buildPagination,
+  PaginationDto,
+  paginationSchema,
+} from "../common/pagination";
 import { TableController } from "../controllers/table.controller";
 import { validateRequest } from "../middleware/validation.middleware";
 
@@ -132,17 +139,15 @@ router.get(
  *         schema:
  *           type: string
  *           format: date
- *           example: "YYYY-MM-DD"
  *         description: Start date for availability check (YYYY-MM-DD). Defaults to current date.
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
- *           example: "YYYY-MM-DD"
  *         description: End date for availability check (YYYY-MM-DD). Defaults to current date + 7 days.
  *       - in: query
- *         name: partySize
+ *         name: size
  *         schema:
  *           type: integer
  *         required: true
@@ -178,6 +183,91 @@ router.get(
     const result = await tableController.getAvailableSlots(
       req.query as unknown as GetAvailableSlotsDTO
     );
+    res.status(200).json(result);
+  }
+);
+
+/**
+ * @swagger
+ * /tables/restaurants/{restaurantId}:
+ *   get:
+ *     summary: Get all tables for a specific restaurant
+ *     tags: [Tables]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: ID of the restaurant
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: List of tables for the restaurant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Table'
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     size:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *                 links:
+ *                   type: object
+ *                   properties:
+ *                     self:
+ *                       type: string
+ *                     next:
+ *                       type: string
+ *                     prev:
+ *                       type: string
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Restaurant not found
+ */
+router.get(
+  "/restaurants/:restaurantId",
+  validateRequest({
+    params: getTablesByRestaurantIdParamsSchema,
+    query: paginationSchema,
+  }),
+  async (req: Request, res: Response) => {
+    const dto = req.query as unknown as PaginationDto;
+    const { data, total } = await tableController.getTablesByRestaurantId({
+      ...req.params,
+      ...dto,
+    } as unknown as GetTablesByRestaurantIdParams);
+
+    const result = buildPagination(data, total, dto, req);
     res.status(200).json(result);
   }
 );

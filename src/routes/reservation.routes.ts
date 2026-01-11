@@ -2,11 +2,15 @@ import { Request, Response, Router } from "express";
 import { container } from "tsyringe";
 
 import {
+  CancelReservationDTO,
   CreateReservationDTO,
   createReservationSchema,
   getAllReservationsByRestaurantIdSchema,
   GetAllReservationsDTO,
   getAllReservationsSchema,
+  getReservationByIdSchema,
+  UpdateReservationDTO,
+  updateReservationSchema,
 } from "../common/dto/reservation.dto";
 import { buildPagination } from "../common/pagination";
 import { ReservationController } from "../controllers/reservation.controller";
@@ -44,11 +48,11 @@ router.post(
   validateRequest({ body: createReservationSchema }),
   async (req, res) => {
     const result = await reservationController.create(
-      req.body as CreateReservationDTO
+      req.body as CreateReservationDTO,
     );
 
     return res.status(201).json(result);
-  }
+  },
 );
 
 /**
@@ -70,7 +74,6 @@ router.post(
  *         schema:
  *           type: string
  *           format: date
- *           example: "YYYY-MM-DD"
  *         required: true
  *         description: Date for which to retrieve reservations
  *       - in: query
@@ -138,12 +141,99 @@ router.get(
 
     const { data, count } = await reservationController.findAll(
       restaurantId as string,
-      dto
+      dto,
     );
     const result = buildPagination(data, count, dto, req);
 
     return res.status(200).json(result);
-  }
+  },
+);
+
+/**
+ * @swagger
+ * /reservations/{id}:
+ *   patch:
+ *     summary: Update an existing reservation
+ *     tags: [Reservations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: ID of the reservation to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateReservationDto'
+ *     responses:
+ *       200:
+ *         description: Reservation updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Reservation'
+ *       400:
+ *         description: Bad request
+ *       440:
+ *         description: Reservation not found
+ */
+router.patch(
+  "/:id",
+  validateRequest({
+    params: getReservationByIdSchema,
+    body: updateReservationSchema,
+  }),
+  async (req, res) => {
+    const result = await reservationController.update({
+      ...req.params,
+      ...req.body,
+    } as UpdateReservationDTO);
+
+    return res.status(200).json(result);
+  },
+);
+
+/**
+ * @swagger
+ * /reservations/{id}/cancel:
+ *   patch:
+ *     summary: Cancel a reservation
+ *     tags: [Reservations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: ID of the reservation to cancel
+ *     responses:
+ *       200:
+ *         description: Reservation cancelled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Reservation'
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Reservation not found or cannot be cancelled
+ */
+router.patch(
+  "/:id/cancel",
+  validateRequest({
+    params: getReservationByIdSchema,
+  }),
+  async (req, res) => {
+    const result = await reservationController.cancel({
+      ...req.params,
+    } as CancelReservationDTO);
+    return res.status(200).json(result);
+  },
 );
 
 export default router;

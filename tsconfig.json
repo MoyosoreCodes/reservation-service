@@ -10,6 +10,13 @@
     "emitDecoratorMetadata": true,
     "removeComments": true,
     "strictPropertyInitialization": false,
-    "noImplicitAny": false
-  }
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*.ts", "server.ts", "jest.setup.ts"],
+  "exclude": ["node_modules", "dist"]
 }

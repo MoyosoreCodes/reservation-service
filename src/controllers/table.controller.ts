@@ -3,6 +3,7 @@ import { injectable } from "tsyringe";
 import {
   CreateTableDTO,
   GetAvailableSlotsDTO,
+  GetTablesByRestaurantIdParams,
   IsTableAvailableDTO,
 } from "../common/dto/table.dto";
 import { ReservationService } from "../services/reservation.service";
@@ -36,5 +37,14 @@ export class TableController {
     const { restaurantId } = dto;
     const restaurant = await this.restaurantService.findById(restaurantId);
     return await this.tableService.getAvailableTimeSlots(restaurant, dto);
+  }
+
+  async getTablesByRestaurantId(dto: GetTablesByRestaurantIdParams) {
+    const { restaurantId, ...pagination } = dto;
+    await this.restaurantService.findById(restaurantId);
+    return await this.tableService.findAllByRestaurant(
+      restaurantId,
+      pagination,
+    );
   }
 }

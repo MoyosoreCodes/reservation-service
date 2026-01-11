@@ -1,20 +1,15 @@
-import {
-  Between,
-  IsNull,
-  LessThan,
-  LessThanOrEqual,
-  Repository,
-} from "typeorm";
+import { Between, IsNull, LessThanOrEqual, Not, Repository } from "typeorm";
 
 import {
   CreateTableDTO,
   GetAvailableSlotsDTO,
   IsTableAvailableDTO,
 } from "../common/dto/table.dto";
+import { ReservationStatus } from "../common/enum/reservation.enum";
 import { ClientError, ContentNotFoundError } from "../common/errors";
+import { PaginationDto } from "../common/pagination";
 import {
   getNextDateForDay,
-  getOperatingHoursForDate,
   groupBy,
   hasTimeRangeOverlap,
   parseTimeToDate,
@@ -65,28 +60,6 @@ export class TableService {
     return table;
   }
 
-  private checkOverlap(
-    tableId: string,
-    reservationTime: Date,
-    duration: number,
-    existingReservations: Reservation[]
-  ): boolean {
-    const proposedEndTime = new Date(
-      reservationTime.getTime() + duration * 60000
-    );
-
-    return existingReservations.some((existing) => {
-      if (existing.table.id !== tableId) return false;
-
-      const existingEndTime = new Date(
-        existing.time.getTime() + existing.duration * 60000
-      );
-      return (
-        existingEndTime > reservationTime && existing.time < proposedEndTime
-      );
-    });
-  }
-
   async isTableAvailable(dto: IsTableAvailableDTO) {
     const { id, day, duration, time } = dto;
 
@@ -102,6 +75,7 @@ export class TableService {
         table: { id },
         time: LessThanOrEqual(proposedEndTime),
         deletedAt: IsNull(),
+        status: Not(ReservationStatus.CANCELLED),
       },
     });
 
@@ -125,9 +99,9 @@ export class TableService {
     dto: GetAvailableSlotsDTO
   ) {
     const { size: partySize, duration } = dto;
-    const startDate = dto.startDate || new Date().toISOString().split("T")[0];
+    const startDate = dto.startDate ?? new Date().toISOString().split("T")[0];
     const endDate =
-      dto.endDate ||
+      dto.endDate ??
       (() => {
         const date = new Date();
         date.setDate(date.getDate() + 7);
@@ -234,12 +208,13 @@ export class TableService {
         table: { restaurant: { id: restaurantId } },
         time: Between(start, end),
         deletedAt: IsNull(),
+        status: Not(ReservationStatus.CANCELLED), // Filter out cancelled reservations
       },
       relations: ["table"],
     });
   }
 
-  private generateAvailableSlots(
+  generateAvailableSlots(
     openingTime: Date,
     closingTime: Date,
     duration: number,
@@ -283,5 +258,16 @@ export class TableService {
     }
 
     return availableSlots;
+  }
+
+  async findAllByRestaurant(restaurantId: string, pagination: PaginationDto) {
+    const [data, total] = await this._tableRepository.findAndCount({
+      where: { restaurant: { id: restaurantId } },
+      select: { restaurant: true },
+      relations: ["restaurant"],
+      skip: (pagination.page - 1) * pagination.size,
+      take: pagination.size,
+    });
+    return { data, total };
   }
 }

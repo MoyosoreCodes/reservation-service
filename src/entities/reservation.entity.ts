@@ -1,6 +1,7 @@
 import { Column, Entity, Index, ManyToOne } from "typeorm";
 
 import { AbstractEntity } from "../common/abstract.entity";
+import { ReservationStatus } from "../common/enum/reservation.enum";
 import { Table } from "./table.entity";
 
 /**
@@ -32,6 +33,11 @@ import { Table } from "./table.entity";
  *           description: Duration of the reservation in minutes
  *         table:
  *           $ref: '#/components/schemas/Table'
+ *         status:
+ *           type: string
+ *           enum: [pending, confirmed, completed, cancelled]
+ *           default: pending
+ *           description: The status of the reservation
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -60,6 +66,12 @@ export class Reservation extends AbstractEntity {
 
   @Column()
   duration: number;
+
+  @Column({
+    type: "text",
+    default: ReservationStatus.PENDING,
+  })
+  status: ReservationStatus;
 
   @ManyToOne(() => Table)
   table: Table;

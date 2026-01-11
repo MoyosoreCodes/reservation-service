@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { paginationSchema } from "../pagination";
 import { operatingDays } from "../utils";
 
 /**
@@ -61,14 +62,23 @@ export const getAvailableSlotsSchema = z.object({
   restaurantId: z.uuid({ error: "Restaurant ID is required" }),
   startDate: z.preprocess(
     (val) => val || new Date().toISOString().split("T")[0],
-    z.string()
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+      .optional(),
   ),
-  endDate: z.preprocess((val) => {
-    if (val) return val;
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    return date.toISOString().split("T")[0];
-  }, z.string()),
+  endDate: z.preprocess(
+    (val) => {
+      if (val) return val;
+      const date = new Date();
+      date.setDate(date.getDate() + 7);
+      return date.toISOString().split("T")[0];
+    },
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+      .optional(),
+  ),
   size: z.coerce
     .number({ error: "Party size is required." })
     .int()
@@ -110,10 +120,21 @@ export const getAvailableSlotsSchema = z.object({
  *           description: Duration of the reservation in minutes
  */
 
-const isTableAvailableSchema = isTableAvailableQuerySchema.and(
-  isTableAvailableParamsSchema
+export const isTableAvailableSchema = isTableAvailableQuerySchema.and(
+  isTableAvailableParamsSchema,
 );
 
 export type CreateTableDTO = z.infer<typeof createTableSchema>;
 export type IsTableAvailableDTO = z.infer<typeof isTableAvailableSchema>;
 export type GetAvailableSlotsDTO = z.infer<typeof getAvailableSlotsSchema>;
+
+export const getTablesByRestaurantIdParamsSchema = z.object({
+  restaurantId: z.uuid({ error: "Restaurant ID is required" }),
+});
+
+export const getTablesByRestaurantIdSchema =
+  getTablesByRestaurantIdParamsSchema.extend(paginationSchema.shape);
+
+export type GetTablesByRestaurantIdParams = z.infer<
+  typeof getTablesByRestaurantIdSchema
+>;
