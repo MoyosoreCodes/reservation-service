@@ -31,7 +31,7 @@ export class TableService {
 
   async create(
     dto: Omit<CreateTableDTO, "restaurantId">,
-    restaurant: Restaurant
+    restaurant: Restaurant,
   ) {
     const latestTable = await this._tableRepository.findOne({
       where: { restaurant: { id: restaurant.id } },
@@ -67,7 +67,7 @@ export class TableService {
     if (reservationTime === -1) throw new ClientError(`Invalid day: ${day}`);
 
     const proposedEndTime = new Date(
-      reservationTime.getTime() + duration * 60000
+      reservationTime.getTime() + duration * 60000,
     );
 
     const potentialConflicts = await this._reservationRepository.find({
@@ -81,13 +81,13 @@ export class TableService {
 
     const hasOverlap = potentialConflicts.some((existing) => {
       const existingEndTime = new Date(
-        existing.time.getTime() + existing.duration * 60000
+        existing.time.getTime() + existing.duration * 60000,
       );
       return hasTimeRangeOverlap(
         reservationTime,
         proposedEndTime,
         existing.time,
-        existingEndTime
+        existingEndTime,
       );
     });
 
@@ -96,7 +96,7 @@ export class TableService {
 
   async getAvailableTimeSlots(
     restaurant: Restaurant,
-    dto: GetAvailableSlotsDTO
+    dto: GetAvailableSlotsDTO,
   ) {
     const { size: partySize, duration } = dto;
     const startDate = dto.startDate ?? new Date().toISOString().split("T")[0];
@@ -118,7 +118,7 @@ export class TableService {
       startDate,
       endDate,
       partySize,
-      duration
+      duration,
     );
 
     if (Object.keys(slots).length > 0) {
@@ -133,10 +133,10 @@ export class TableService {
     startDate: string,
     endDate: string,
     partySize: number,
-    duration: number
+    duration: number,
   ) {
     const suitableTables = restaurant.tables.filter(
-      (t) => t.capacity >= partySize
+      (t) => t.capacity >= partySize,
     );
 
     if (suitableTables.length === 0)
@@ -145,7 +145,7 @@ export class TableService {
     const reservations = await this.getReservationsInRange(
       restaurant.id,
       startDate,
-      endDate
+      endDate,
     );
 
     const slotsByDate: Record<string, string[]> = {};
@@ -178,7 +178,7 @@ export class TableService {
           closingTime,
           duration,
           suitableTables,
-          reservationsByTable
+          reservationsByTable,
         );
 
         if (slots.length > 0) {
@@ -195,7 +195,7 @@ export class TableService {
   private async getReservationsInRange(
     restaurantId: string,
     startDate: string,
-    endDate: string
+    endDate: string,
   ) {
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -219,7 +219,7 @@ export class TableService {
     closingTime: Date,
     duration: number,
     suitableTables: Table[],
-    reservationsByTable: Record<string, Reservation[]>
+    reservationsByTable: Record<string, Reservation[]>,
   ) {
     const availableSlots: string[] = [];
     const intervalMinutes = duration;
@@ -233,13 +233,13 @@ export class TableService {
         const tableReservations = reservationsByTable[table.id] || [];
         return !tableReservations.some((reservation) => {
           const reservationEnd = new Date(
-            reservation.time.getTime() + reservation.duration * 60000
+            reservation.time.getTime() + reservation.duration * 60000,
           );
           return hasTimeRangeOverlap(
             currentSlot,
             slotEnd,
             reservation.time,
-            reservationEnd
+            reservationEnd,
           );
         });
       });
@@ -250,7 +250,7 @@ export class TableService {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
-          })
+          }),
         );
       }
 

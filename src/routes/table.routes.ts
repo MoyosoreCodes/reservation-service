@@ -55,7 +55,7 @@ router.post(
   async (req: Request, res: Response) => {
     const result = await tableController.create(req.body);
     return res.status(201).json(result);
-  }
+  },
 );
 
 /**
@@ -117,7 +117,7 @@ router.get(
       ...req.query,
     } as unknown as IsTableAvailableDTO);
     res.status(200).json(result);
-  }
+  },
 );
 
 /**
@@ -181,10 +181,10 @@ router.get(
   }),
   async (req: Request, res: Response) => {
     const result = await tableController.getAvailableSlots(
-      req.query as unknown as GetAvailableSlotsDTO
+      req.query as unknown as GetAvailableSlotsDTO,
     );
     res.status(200).json(result);
-  }
+  },
 );
 
 /**
@@ -269,7 +269,7 @@ router.get(
 
     const result = buildPagination(data, total, dto, req);
     res.status(200).json(result);
-  }
+  },
 );
 
 export default router;

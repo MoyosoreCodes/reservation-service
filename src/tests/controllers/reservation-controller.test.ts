@@ -162,7 +162,11 @@ describe("ReservationController", () => {
       size: 2,
       time: new Date("2026-01-15T10:00:00Z"),
       duration: 60,
-      table: { id: "table-uuid-1", capacity: 4, restaurant: { id: "rest-uuid" } },
+      table: {
+        id: "table-uuid-1",
+        capacity: 4,
+        restaurant: { id: "rest-uuid" },
+      },
       status: "pending",
     };
 
@@ -174,8 +178,12 @@ describe("ReservationController", () => {
       };
       const updatedReservation = { ...mockExistingReservation, ...updateDto };
 
-      mockReservationService.findById.mockResolvedValue(mockExistingReservation as any);
-      mockReservationService.update.mockResolvedValue(updatedReservation as any);
+      mockReservationService.findById.mockResolvedValue(
+        mockExistingReservation as any,
+      );
+      mockReservationService.update.mockResolvedValue(
+        updatedReservation as any,
+      );
 
       const result = await reservationController.update(updateDto as any);
 
@@ -194,17 +202,31 @@ describe("ReservationController", () => {
         tableId: newTableId,
         size: 4,
       };
-      const mockNewTable = { id: newTableId, capacity: 6, restaurant: { id: "rest-uuid" } };
-      const updatedReservation = { ...mockExistingReservation, table: mockNewTable, size: 4 };
+      const mockNewTable = {
+        id: newTableId,
+        capacity: 6,
+        restaurant: { id: "rest-uuid" },
+      };
+      const updatedReservation = {
+        ...mockExistingReservation,
+        table: mockNewTable,
+        size: 4,
+      };
 
-      mockReservationService.findById.mockResolvedValue(mockExistingReservation as any);
+      mockReservationService.findById.mockResolvedValue(
+        mockExistingReservation as any,
+      );
       mockTableService.findById.mockResolvedValue(mockNewTable as any);
-      mockReservationService.update.mockResolvedValue(updatedReservation as any);
+      mockReservationService.update.mockResolvedValue(
+        updatedReservation as any,
+      );
 
       const result = await reservationController.update(updateDto as any);
 
       expect(result).toEqual(updatedReservation);
-      expect(mockReservationService.findById).toHaveBeenCalledWith(reservationId);
+      expect(mockReservationService.findById).toHaveBeenCalledWith(
+        reservationId,
+      );
       expect(mockTableService.findById).toHaveBeenCalledWith(newTableId);
       expect(mockReservationService.update).toHaveBeenCalledWith(
         reservationId,
@@ -220,26 +242,37 @@ describe("ReservationController", () => {
         new ContentNotFoundError("Reservation not found"),
       );
 
-      await expect(reservationController.update(updateDto as any)).rejects.toThrow(
-        ContentNotFoundError,
+      await expect(
+        reservationController.update(updateDto as any),
+      ).rejects.toThrow(ContentNotFoundError);
+      expect(mockReservationService.findById).toHaveBeenCalledWith(
+        "non-existent-id",
       );
-      expect(mockReservationService.findById).toHaveBeenCalledWith("non-existent-id");
       expect(mockReservationService.update).not.toHaveBeenCalled();
     });
 
     it("should throw ClientError for invalid status transition", async () => {
       const updateDto = { id: reservationId, status: "completed" }; // Assuming pending -> completed is invalid
-      const mockReservationWithStatus = { ...mockExistingReservation, status: "confirmed" };
+      const mockReservationWithStatus = {
+        ...mockExistingReservation,
+        status: "confirmed",
+      };
 
-      mockReservationService.findById.mockResolvedValue(mockReservationWithStatus as any);
+      mockReservationService.findById.mockResolvedValue(
+        mockReservationWithStatus as any,
+      );
       mockReservationService.update.mockRejectedValue(
-        new ClientError("Cannot transition reservation from confirmed to completed"),
+        new ClientError(
+          "Cannot transition reservation from confirmed to completed",
+        ),
       );
 
-      await expect(reservationController.update(updateDto as any)).rejects.toThrow(
-        ClientError,
+      await expect(
+        reservationController.update(updateDto as any),
+      ).rejects.toThrow(ClientError);
+      expect(mockReservationService.findById).toHaveBeenCalledWith(
+        reservationId,
       );
-      expect(mockReservationService.findById).toHaveBeenCalledWith(reservationId);
       expect(mockReservationService.update).toHaveBeenCalledWith(
         reservationId,
         { status: "completed" },
@@ -251,32 +284,47 @@ describe("ReservationController", () => {
       const newTableId = "non-existent-table-id";
       const updateDto = { id: reservationId, tableId: newTableId };
 
-      mockReservationService.findById.mockResolvedValue(mockExistingReservation as any);
+      mockReservationService.findById.mockResolvedValue(
+        mockExistingReservation as any,
+      );
       mockTableService.findById.mockRejectedValue(
         new ContentNotFoundError("Table not found"),
       );
 
-      await expect(reservationController.update(updateDto as any)).rejects.toThrow(
-        ContentNotFoundError,
+      await expect(
+        reservationController.update(updateDto as any),
+      ).rejects.toThrow(ContentNotFoundError);
+      expect(mockReservationService.findById).toHaveBeenCalledWith(
+        reservationId,
       );
-      expect(mockReservationService.findById).toHaveBeenCalledWith(reservationId);
       expect(mockTableService.findById).toHaveBeenCalledWith(newTableId);
       expect(mockReservationService.update).not.toHaveBeenCalled();
     });
 
     it("should throw ClientError if reservation update fails due to client-side issue (e.g., table not available)", async () => {
       const updateDto = { id: reservationId, time: "12:00" };
-      const mockReservationWithTable = { ...mockExistingReservation, table: { id: "table-uuid-1", capacity: 4, restaurant: { id: "rest-uuid" } } };
+      const mockReservationWithTable = {
+        ...mockExistingReservation,
+        table: {
+          id: "table-uuid-1",
+          capacity: 4,
+          restaurant: { id: "rest-uuid" },
+        },
+      };
 
-      mockReservationService.findById.mockResolvedValue(mockReservationWithTable as any);
+      mockReservationService.findById.mockResolvedValue(
+        mockReservationWithTable as any,
+      );
       mockReservationService.update.mockRejectedValue(
         new ClientError("Table is already reserved for the selected time slot"),
       );
 
-      await expect(reservationController.update(updateDto as any)).rejects.toThrow(
-        ClientError,
+      await expect(
+        reservationController.update(updateDto as any),
+      ).rejects.toThrow(ClientError);
+      expect(mockReservationService.findById).toHaveBeenCalledWith(
+        reservationId,
       );
-      expect(mockReservationService.findById).toHaveBeenCalledWith(reservationId);
       expect(mockReservationService.update).toHaveBeenCalledWith(
         reservationId,
         { time: "12:00" },
